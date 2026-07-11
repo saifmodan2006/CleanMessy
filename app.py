@@ -11,7 +11,7 @@ from PIL import Image
 # Import custom modules
 from modules.core.state import init_session_state, StateHistory
 from modules.core.quality import calculate_quality_score, get_improvement_suggestions
-from modules.core.utils import load_dataset, export_dataset, optimize_memory
+from modules.core.utils import load_dataset, export_dataset, optimize_memory, parquet_support_available
 from modules.cleaning.missing_dups import impute_missing, drop_missing_rows, remove_duplicates, drop_empty_rows_cols
 from modules.cleaning.text import clean_text_column
 from modules.cleaning.types import auto_detect_types, convert_type
@@ -35,6 +35,7 @@ st.set_page_config(
 
 # Initialize Session State
 init_session_state()
+PARQUET_ENABLED = parquet_support_available()
 
 # 2. Inject CSS Theme
 IS_DARK = st.session_state.theme == "dark"
@@ -476,7 +477,13 @@ with st.sidebar:
         st.markdown('<div class="nav-divider"></div>', unsafe_allow_html=True)
         st.markdown("<div class='nav-section-label'>Settings</div>", unsafe_allow_html=True)
         st.session_state.auto_save = st.checkbox("Auto Save State", value=st.session_state.auto_save)
-        st.session_state.default_format = st.selectbox("Download Format", ["CSV", "Excel", "JSON", "Parquet", "Pickle"], index=0)
+        download_formats = ["CSV", "Excel", "JSON", "Pickle"] + (["Parquet"] if PARQUET_ENABLED else [])
+        current_default = st.session_state.default_format if st.session_state.default_format in download_formats else "CSV"
+        st.session_state.default_format = st.selectbox(
+            "Download Format",
+            download_formats,
+            index=download_formats.index(current_default),
+        )
 
         if st.button("⚡ Optimize RAM Usage", use_container_width=True, key="sidebar_opt_mem"):
             opt_df, stats = optimize_memory(st.session_state.current_df)
@@ -528,8 +535,9 @@ if st.session_state.active_tab == "Home":
     - **CSV / TSV**: Standard comma/tab separated files.
     - **Excel (.xlsx / .xls)**: Multi-sheet spreadsheet files.
     - **JSON**: Structured list of key-value objects.
-    - **Parquet**: Standard column-oriented data format.
     """)
+    if PARQUET_ENABLED:
+        st.markdown("- **Parquet**: Standard column-oriented data format.")
     
     if st.button("🚀 Upload Your Dataset to Get Started", use_container_width=True):
         st.session_state.active_tab = "Upload & Preview"
@@ -541,9 +549,10 @@ if st.session_state.active_tab == "Home":
 elif st.session_state.active_tab == "Upload & Preview":
     st.markdown("## Upload Dataset")
     
+    upload_types = ["csv", "tsv", "xlsx", "xls", "json"] + (["parquet"] if PARQUET_ENABLED else [])
     uploaded_file = st.file_uploader(
         "Drag and drop your dataset here", 
-        type=["csv", "tsv", "xlsx", "xls", "json", "parquet"]
+        type=upload_types
     )
     
     if os.path.exists("messy_dataset.csv") and st.session_state.current_df is None:
@@ -1526,7 +1535,13 @@ elif st.session_state.active_tab == "Export / Download":
     st.markdown("---")
     
     st.markdown("### Export Configurations")
-    selected_format = st.selectbox("Export File Format:", ["CSV", "Excel", "JSON", "Parquet", "Pickle"], index=["CSV", "Excel", "JSON", "Parquet", "Pickle"].index(st.session_state.default_format))
+    export_formats = ["CSV", "Excel", "JSON", "Pickle"] + (["Parquet"] if PARQUET_ENABLED else [])
+    selected_default = st.session_state.default_format if st.session_state.default_format in export_formats else "CSV"
+    selected_format = st.selectbox(
+        "Export File Format:",
+        export_formats,
+        index=export_formats.index(selected_default),
+    )
     
     filename_input = st.text_input("Filename:", value=f"clean_{os.path.splitext(st.session_state.file_name)[0] if st.session_state.file_name else 'dataset'}")
     

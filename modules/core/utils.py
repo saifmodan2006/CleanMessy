@@ -2,8 +2,16 @@ import pandas as pd
 import numpy as np
 import io
 import os
+import importlib.util
 import streamlit as st
 from typing import Tuple, Optional, Dict, Any
+
+def parquet_support_available() -> bool:
+    """Return True when a parquet engine is installed in the environment."""
+    return (
+        importlib.util.find_spec("pyarrow") is not None
+        or importlib.util.find_spec("fastparquet") is not None
+    )
 
 @st.cache_data(show_spinner=False)
 def _load_dataset_from_bytes(file_bytes: bytes, file_name: str) -> Tuple[pd.DataFrame, str]:
@@ -23,7 +31,10 @@ def _load_dataset_from_bytes(file_bytes: bytes, file_name: str) -> Tuple[pd.Data
         elif ext == '.json':
             df = pd.read_json(buffer)
         elif ext == '.parquet':
-            df = pd.read_parquet(buffer)
+            if not parquet_support_available():
+                err = "Parquet support is not available in this deployment."
+            else:
+                df = pd.read_parquet(buffer)
         else:
             err = f"Unsupported file format: {ext}"
     except Exception as e:
@@ -66,6 +77,8 @@ def export_dataset(df: pd.DataFrame, format_type: str) -> Tuple[bytes, str]:
         json_str = df.to_json(orient='records', indent=4)
         return json_str.encode('utf-8'), "application/json"
     elif format_type == "PARQUET":
+        if not parquet_support_available():
+            raise ValueError("Parquet export is not available in this deployment.")
         df.to_parquet(buffer, index=False, engine='pyarrow')
         buffer.seek(0)
         return buffer.getvalue(), "application/octet-stream"
