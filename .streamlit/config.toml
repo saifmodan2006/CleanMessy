@@ -18,5 +18,9 @@ headless = true
 runOnSave = true
 maxUploadSize = 200
 enableXsrfProtection = true
+enableCORS = true
+enableWebsocketCompression = true
+
+
 
 
