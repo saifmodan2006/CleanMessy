@@ -130,13 +130,12 @@ st.markdown(f"""
 @viewport {{ width: device-width; }}
 
 header[data-testid="stHeader"] {{
-    background: transparent !important;
-    height: 0 !important;
+    background: {bg} !important;
+    border-bottom: 1px solid {border_subtle} !important;
 }}
 header[data-testid="stHeader"] > div {{
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    min-height: 0 !important;
+    padding-top: 0.2rem !important;
+    padding-bottom: 0.2rem !important;
 }}
 #MainMenu, footer, [data-testid="stToolbar"],
 [data-testid="stDecoration"], [data-testid="stStatusWidget"], .stDeployButton {{
@@ -155,6 +154,21 @@ button[aria-label="Close sidebar"] {{
     background: {card} !important;
     color: {text} !important;
     box-shadow: {shadow} !important;
+}}
+[data-testid="stSidebar"] {{
+    min-width: 320px !important;
+    max-width: 320px !important;
+    border-right: 1px solid {border} !important;
+    background: {bg} !important;
+}}
+[data-testid="stSidebar"][aria-expanded="false"] {{
+    min-width: 320px !important;
+    max-width: 320px !important;
+    transform: translateX(0) !important;
+    margin-left: 0 !important;
+}}
+[data-testid="stSidebar"] > div:first-child {{
+    background: {bg} !important;
 }}
 html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"],
 .main, .block-container, section[data-testid="stMain"] {{
@@ -232,6 +246,7 @@ def require_dataset(page_title: str, button_key: str) -> pd.DataFrame:
                 st.session_state.original_df = df_demo.copy()
                 st.session_state.current_df = df_demo.copy()
                 st.session_state.file_name = "messy_dataset.csv"
+                st.session_state.upload_signature = None
                 st.session_state.dataset_history = StateHistory(df_demo, "messy_dataset.csv")
                 st.toast("Loaded messy_dataset.csv!", icon="✨")
                 st.rerun()
@@ -317,54 +332,68 @@ with st.sidebar:
     nav_options = list(nav_icons.keys())
 
     # Inject custom sidebar nav button CSS
-    st.markdown("""
+    st.markdown(f"""
     <style>
-    /* Hide the default radio widget completely */
-    [data-testid="stSidebar"] .stRadio { display: none !important; }
-
-    /* Nav button styling */
-    .nav-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.6rem;
-        width: 100%;
-        padding: 0.55rem 0.85rem;
-        margin-bottom: 3px;
-        border-radius: 8px;
-        border: none;
-        background: transparent;
-        color: #71717a;
-        font-family: 'DM Sans', sans-serif;
-        font-size: 0.85rem;
-        font-weight: 500;
-        cursor: pointer;
-        text-align: left;
-        transition: background 0.18s ease, color 0.18s ease;
-        text-decoration: none;
-    }
-    .nav-btn:hover {
-        background: rgba(129,140,248,0.10);
-        color: #818cf8;
-    }
-    .nav-btn.active {
-        background: rgba(129,140,248,0.15);
-        color: #818cf8;
-        font-weight: 700;
-    }
-    .nav-section-label {
+    [data-testid="stSidebar"] .stMarkdown {{
+        margin-bottom: 0 !important;
+    }}
+    .sidebar-brand {{
+        padding: 0.25rem 0 1rem 0;
+    }}
+    .sidebar-brand-title {{
+        font-family: 'Outfit', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: {text};
+        letter-spacing: -0.03em;
+        margin-bottom: 0.2rem;
+    }}
+    .sidebar-brand-subtitle {{
+        font-size: 0.78rem;
+        color: {text_muted};
+        line-height: 1.4;
+    }}
+    .sidebar-status {{
+        margin: 0.85rem 0 1rem 0;
+        padding: 0.85rem 0.9rem;
+        border-radius: 12px;
+        background: {bg_subtle};
+        border: 1px solid {border};
+    }}
+    .sidebar-status-label {{
         font-size: 0.68rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.08em;
-        color: #52525b;
-        padding: 0.7rem 0.85rem 0.2rem;
-        margin-top: 0.4rem;
-    }
-    .nav-divider {
+        color: {text_dim};
+        margin-bottom: 0.25rem;
+    }}
+    .sidebar-status-value {{
+        font-size: 0.82rem;
+        color: {text};
+        line-height: 1.4;
+        font-weight: 600;
+    }}
+    .nav-group {{
+        margin-bottom: 0.85rem;
+        padding: 0.55rem;
+        border-radius: 14px;
+        border: 1px solid {border_subtle};
+        background: {bg_subtle};
+    }}
+    .nav-section-label {{
+        font-size: 0.68rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: {text_muted};
+        padding: 0.1rem 0.4rem 0.45rem;
+    }}
+    .nav-divider {{
         height: 1px;
-        background: rgba(100,100,120,0.15);
-        margin: 0.5rem 0;
-    }
+        background: {border};
+        margin: 0.85rem 0;
+    }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -378,17 +407,46 @@ with st.sidebar:
         ("Output", ["Export / Download"]),
     ]
 
-    active_tab = st.session_state.active_tab
+    active_tab = st.session_state.active_tab if st.session_state.active_tab in nav_options else "Home"
+    st.session_state.active_tab = active_tab
+
+    st.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-title">CleanMessy Navigation</div>
+            <div class="sidebar-brand-subtitle">Use the General section to upload data, then move through cleaning, analysis, and export.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     if st.session_state.current_df is None:
-        st.caption("All tools are available in the menu. Load a dataset to start using them.")
+        st.markdown(
+            """
+            <div class="sidebar-status">
+                <div class="sidebar-status-label">Dataset Status</div>
+                <div class="sidebar-status-value">No dataset loaded. Open <strong>Upload &amp; Preview</strong> from the General section to begin.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"""
+            <div class="sidebar-status">
+                <div class="sidebar-status-label">Dataset Status</div>
+                <div class="sidebar-status-value">{st.session_state.file_name or "Dataset loaded"}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     for section_label, section_items in nav_sections:
-        st.markdown(f'<div class="nav-section-label">{section_label}</div>', unsafe_allow_html=True)
+        st.markdown('<div class="nav-group">', unsafe_allow_html=True)
+        st.markdown(f"##### {section_label}")
         for item in section_items:
             icon = nav_icons.get(item, "•")
             is_active = (item == active_tab)
-            # Use st.button for actual click handling
             btn_label = f"{icon}  {item}"
             if st.button(
                 btn_label,
@@ -398,10 +456,11 @@ with st.sidebar:
             ):
                 st.session_state.active_tab = item
                 st.rerun()
-        st.markdown('<div class="nav-divider"></div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Sidebar Timeline if dataset is loaded
     if st.session_state.dataset_history is not None:
+        st.markdown('<div class="nav-divider"></div>', unsafe_allow_html=True)
         st.markdown("<div class='nav-section-label'>Operations History</div>", unsafe_allow_html=True)
         timeline = st.session_state.dataset_history.get_timeline()
         for item in reversed(timeline[-6:]):  # Show last 6 only
@@ -497,6 +556,7 @@ elif st.session_state.active_tab == "Upload & Preview":
                 st.session_state.original_df = df_demo.copy()
                 st.session_state.current_df = df_demo.copy()
                 st.session_state.file_name = "messy_dataset.csv"
+                st.session_state.upload_signature = None
                 st.session_state.dataset_history = StateHistory(df_demo, "messy_dataset.csv")
                 st.toast("Loaded messy_dataset.csv!", icon="✨")
                 st.rerun()
@@ -504,15 +564,22 @@ elif st.session_state.active_tab == "Upload & Preview":
                 st.error(f"Failed to load demo dataset: {str(e)}")
                 
     if uploaded_file is not None:
-        # Load dataset
-        df, err = load_dataset(uploaded_file, uploaded_file.name)
-        if err:
-            st.error(err)
-        else:
-            if st.session_state.original_df is None or st.session_state.file_name != uploaded_file.name:
+        upload_signature = f"{uploaded_file.name}:{uploaded_file.size}"
+        needs_reload = (
+            st.session_state.upload_signature != upload_signature
+            or st.session_state.original_df is None
+        )
+
+        if needs_reload:
+            with st.spinner(f"Loading {uploaded_file.name}..."):
+                df, err = load_dataset(uploaded_file, uploaded_file.name)
+            if err:
+                st.error(err)
+            else:
                 st.session_state.original_df = df.copy()
                 st.session_state.current_df = df.copy()
                 st.session_state.file_name = uploaded_file.name
+                st.session_state.upload_signature = upload_signature
                 st.session_state.dataset_history = StateHistory(df, uploaded_file.name)
                 st.success(f"Successfully loaded {uploaded_file.name}!")
                 st.rerun()

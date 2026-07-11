@@ -2,34 +2,48 @@ import pandas as pd
 import numpy as np
 import io
 import os
+import streamlit as st
 from typing import Tuple, Optional, Dict, Any
+
+@st.cache_data(show_spinner=False)
+def _load_dataset_from_bytes(file_bytes: bytes, file_name: str) -> Tuple[pd.DataFrame, str]:
+    """Parse uploaded file bytes once and reuse the result across reruns."""
+    ext = os.path.splitext(file_name)[1].lower()
+    df = pd.DataFrame()
+    err = ""
+
+    try:
+        buffer = io.BytesIO(file_bytes)
+        if ext == '.csv':
+            df = pd.read_csv(buffer)
+        elif ext in ['.xlsx', '.xls']:
+            df = pd.read_excel(buffer)
+        elif ext == '.tsv':
+            df = pd.read_csv(buffer, sep='\t')
+        elif ext == '.json':
+            df = pd.read_json(buffer)
+        elif ext == '.parquet':
+            df = pd.read_parquet(buffer)
+        else:
+            err = f"Unsupported file format: {ext}"
+    except Exception as e:
+        err = f"Failed to parse file: {str(e)}"
+
+    return df, err
 
 def load_dataset(file_buffer: Any, file_name: str) -> Tuple[pd.DataFrame, str]:
     """
     Loads dataset from file buffer based on the file extension.
     Returns: (DataFrame, Error Message if any)
     """
-    ext = os.path.splitext(file_name)[1].lower()
-    df = pd.DataFrame()
-    err = ""
-    
-    try:
-        if ext == '.csv':
-            df = pd.read_csv(file_buffer)
-        elif ext in ['.xlsx', '.xls']:
-            df = pd.read_excel(file_buffer)
-        elif ext == '.tsv':
-            df = pd.read_csv(file_buffer, sep='\t')
-        elif ext == '.json':
-            df = pd.read_json(file_buffer)
-        elif ext == '.parquet':
-            df = pd.read_parquet(file_buffer)
-        else:
-            err = f"Unsupported file format: {ext}"
-    except Exception as e:
-        err = f"Failed to parse file: {str(e)}"
-        
-    return df, err
+    if hasattr(file_buffer, "getvalue"):
+        file_bytes = file_buffer.getvalue()
+    elif isinstance(file_buffer, bytes):
+        file_bytes = file_buffer
+    else:
+        file_bytes = file_buffer.read()
+
+    return _load_dataset_from_bytes(file_bytes, file_name)
 
 def export_dataset(df: pd.DataFrame, format_type: str) -> Tuple[bytes, str]:
     """

@@ -106,3 +106,5 @@ def init_session_state():
         st.session_state.chart_theme = "plotly_dark"
     if "default_format" not in st.session_state:
         st.session_state.default_format = "CSV"
+    if "upload_signature" not in st.session_state:
+        st.session_state.upload_signature = None
