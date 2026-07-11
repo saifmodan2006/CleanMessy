@@ -1,0 +1,27 @@
+[client]
+showErrorDetails = true
+showWarningOnDirectExecution = false
+
+[logger]
+level = "info"
+
+[browser]
+gatherUsageStats = false
+serverAddress = "localhost"
+
+[theme]
+primaryColor = "#818cf8"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f9fafb"
+textColor = "#09090b"
+font = "sans serif"
+
+[server]
+port = 8501
+headless = true
+runOnSave = true
+maxUploadSize = 200
+enableXsrfProtection = true
+
+[client]
+toolbarMode = "viewer"

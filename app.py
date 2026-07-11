@@ -82,8 +82,15 @@ else:
     shadow = "0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03)"
 
 # Read custom stylesheet
-with open("assets/styles.css", "r") as f:
-    css_template = f.read()
+import os
+css_path = os.path.join(os.path.dirname(__file__), "assets", "styles.css")
+try:
+    with open(css_path, "r", encoding="utf-8") as f:
+        css_template = f.read()
+except FileNotFoundError:
+    # Fallback CSS if file not found
+    css_template = ""
+    st.warning(f"CSS file not found at {css_path}")
 
 # Replace variables in CSS template
 css_compiled = css_template.replace("var(--bg)", bg)\

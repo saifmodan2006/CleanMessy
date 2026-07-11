@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Streamlit
+.streamlit/secrets.toml
+.streamlit/.streamlitrc
+.streamlit/cache/
+streamlit_cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.env
+.env.local
+
+# Data
+*.csv.bak
+*.xlsx.bak
+*.tmp
+
+# Logs
+*.log
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest
+.pytest_cache/
