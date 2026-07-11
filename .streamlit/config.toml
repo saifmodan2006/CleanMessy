@@ -1,13 +1,9 @@
 [client]
 showErrorDetails = true
-showWarningOnDirectExecution = false
+toolbarMode = "viewer"
 
 [logger]
 level = "info"
-
-[browser]
-gatherUsageStats = false
-serverAddress = "localhost"
 
 [theme]
 primaryColor = "#818cf8"
@@ -23,5 +19,4 @@ runOnSave = true
 maxUploadSize = 200
 enableXsrfProtection = true
 
-[client]
-toolbarMode = "viewer"
+
